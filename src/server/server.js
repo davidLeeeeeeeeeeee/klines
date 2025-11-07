@@ -17,48 +17,64 @@ const signalMapping = {
 
 app.post('/webhook', async (req, res) => {
     try {
-        const { symbol, side, qty, takeProfit, stopLoss } = req.body;
+        const { symbol, side, qty, price, takeProfit, stopLoss } = req.body;
 
         // 验证必需参数
-        if (!symbol || !side || !qty) {
+        if (!symbol || !side) {
             return res.status(400).json({
                 success: false,
-                error: '缺少必需参数: symbol, side, qty'
+                error: '缺少必需参数: symbol, side'
             });
         }
 
         // 检查信号类型
         if (!signalMapping[side]) {
-            return res.status(400).json({ 
-                success: false, 
-                error: `不支持的信号类型: ${side}` 
+            return res.status(400).json({
+                success: false,
+                error: `不支持的信号类型: ${side}`
             });
         }
 
-
         // 执行订单
         const orderParams = signalMapping[side];
+
+        // 如果是平仓操作（reduceOnly=true），使用极大值确保完全平仓
+        // 根据 Bybit API 文档，传入 qty="0" 和 reduceOnly="true" 可以平掉最大数量的仓位
+        let orderQty = qty;
+        if (orderParams.reduceOnly) {
+            orderQty = "999999"; // 使用极大值，确保完全平仓
+            console.log(`平仓操作: 使用极大值 qty=${orderQty} 确保完全平仓`);
+        } else if (!qty) {
+            // 开仓操作必须提供 qty
+            return res.status(400).json({
+                success: false,
+                error: '开仓操作缺少必需参数: qty'
+            });
+        }
+
         const result = await executeOrder({
             symbol,
             side: orderParams.side,
-            qty,
+            qty: orderQty,
+            price, // 传递价格参数，如果有则下限价单，否则下市价单
             reduceOnly: orderParams.reduceOnly,
             takeProfit,
             stopLoss
         });
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             data: result,
             signal: side,
+            orderType: price ? 'Limit' : 'Market', // 返回订单类型
             timestamp: new Date().toISOString()
         });
 
     } catch (error) {
         console.error('订单执行失败:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });

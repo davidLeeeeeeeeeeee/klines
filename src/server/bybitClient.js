@@ -5,7 +5,7 @@ const client = new RestClientV5({
     testnet: process.env.BYBIT_TESTNET === 'true',
     key: 'APJWtTOwYbWYqdNPNf',
     secret: 'BoDzOVXYXBpvo1kvpLSmGb847RJOgesCSvGu',
-    recv_window: 20000, // 增加时间窗口到20秒，允许更大的时间偏差
+    recv_window: 200000, // 增加时间窗口到200秒，允许更大的时间偏差
     enable_time_sync: true, // 启用时间同步，自动对齐服务器时间
     syncTimeBeforePrivateRequests: true, // 每次私有请求前同步一次时间，尽量避免时间漂移
 });
@@ -16,26 +16,54 @@ const client = new RestClientV5({
  * @param {string} params.symbol - 交易对 (如: BTCUSDT)
  * @param {string} params.side - Buy 或 Sell
  * @param {string} params.qty - 数量
+ * @param {string} params.price - 限价单价格 (可选，如果提供则下限价单，否则下市价单)
  * @param {boolean} params.reduceOnly - 是否只减仓
  * @param {string} params.takeProfit - 止盈价格
  * @param {string} params.stopLoss - 止损价格
  */
-async function executeOrder({ symbol, side, qty, reduceOnly,takeProfit,stopLoss }) {
+async function executeOrder({ symbol, side, qty, price, reduceOnly, takeProfit, stopLoss }) {
     try {
+        // 在下单前强制进行一次时间同步，避免本机时间超前导致被拒
+        try {
+            await client.syncTime(true);
+        } catch (e) {
+            console.warn('时间同步失败，继续尝试下单（将进行自动重试）');
+        }
+
+        // 根据是否有price参数决定订单类型
+        const orderType = price ? 'Limit' : 'Market';
+
         const orderParams = {
             category: 'linear', // 永续合约
             symbol: symbol,
             side: side,
-            orderType: 'Market', // 市价单
+            orderType: orderType,
             qty: qty.toString(),
             reduceOnly: reduceOnly,
             takeProfit: takeProfit,
             stopLoss: stopLoss,
         };
 
+        // 如果是限价单，添加价格参数
+        if (price) {
+            orderParams.price = price.toString();
+        }
+
         console.log('提交订单:', orderParams);
 
-        const response = await client.submitOrder(orderParams);
+        let response = await client.submitOrder(orderParams);
+
+        // 如果遇到时间窗/时间戳错误，进行一次重试：重新同步时间并加入微小负偏移
+        if (response.retCode !== 0 && /timestamp|recv_window|recvWindow/i.test(response.retMsg || '')) {
+            console.warn('检测到时间相关错误，正在重新同步时间并重试...');
+            try {
+                await client.syncTime(true);
+                // 保险起见，给时间戳加入 -1000ms 的微小负偏移，避免“本机时间超前”
+                client.timeOffset = (client.timeOffset || 0) - 1000;
+            } catch {}
+
+            response = await client.submitOrder(orderParams);
+        }
 
         if (response.retCode === 0) {
             console.log('订单成功:', response.result);
