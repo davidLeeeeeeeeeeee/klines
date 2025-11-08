@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://111.68.9.222:3000';
 
 // 颜色输出
 const colors = {
@@ -59,7 +59,7 @@ async function testHealth() {
 }
 
 
-// 单独测试某个功能
+// 单独测试开多仓
 async function openETHUSDT() {
     log('\n🎯 快速测试 - 开多仓\n', 'yellow');
 
@@ -67,7 +67,7 @@ async function openETHUSDT() {
         symbol: 'ETHUSDT',
         side: 'ENTER_LONG',
         qty: '0.01',
-        price: '3300',
+        price: '3400',
         trigger_time: new Date().toISOString(),
         max_lag: '10',
         strategy_id: 'quick-test-' + Date.now(),
@@ -117,4 +117,4 @@ async function closeDownETHUSDT() {
 
 }
 // 命令行参数处理
-closeDownETHUSDT();
+openETHUSDT();

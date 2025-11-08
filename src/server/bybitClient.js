@@ -11,6 +11,46 @@ const client = new RestClientV5({
 });
 
 /**
+ * 获取当前持仓信息
+ * @param {string} symbol - 交易对 (如: BTCUSDT)
+ * @returns {Object} 持仓信息，包含 size (持仓数量) 和 side (持仓方向)
+ */
+async function getPosition(symbol) {
+    try {
+        await client.syncTime(true);
+
+        const response = await client.getPositionInfo({
+            category: 'linear',
+            symbol: symbol
+        });
+
+        if (response.retCode === 0 && response.result.list.length > 0) {
+            const position = response.result.list[0];
+            const size = Math.abs(parseFloat(position.size));
+            const positionSide = parseFloat(position.size) > 0 ? 'long' : 'short';
+
+            console.log(`当前持仓 ${symbol}: 方向=${positionSide}, 数量=${size}`);
+
+            return {
+                size: size.toString(),
+                side: positionSide,
+                hasPosition: size > 0
+            };
+        }
+
+        console.log(`${symbol} 当前无持仓`);
+        return {
+            size: '0',
+            side: null,
+            hasPosition: false
+        };
+    } catch (error) {
+        console.error('查询持仓失败:', error);
+        throw error;
+    }
+}
+
+/**
  * 执行Bybit订单
  * @param {Object} params - 订单参数
  * @param {string} params.symbol - 交易对 (如: BTCUSDT)
@@ -30,15 +70,29 @@ async function executeOrder({ symbol, side, qty, price, reduceOnly, takeProfit, 
             console.warn('时间同步失败，继续尝试下单（将进行自动重试）');
         }
 
+        // 如果是平仓操作且没有指定数量，查询当前持仓并使用实际持仓数量
+        let actualQty = qty;
+        if (reduceOnly && (!qty || qty === '999999')) {
+            console.log('平仓操作: 查询当前持仓数量...');
+            const position = await getPosition(symbol);
+
+            if (!position.hasPosition) {
+                throw new Error(`${symbol} 当前无持仓，无法平仓`);
+            }
+
+            actualQty = position.size;
+            console.log(`使用实际持仓数量进行平仓: ${actualQty}`);
+        }
+
         // 根据是否有price参数决定订单类型
-        const orderType = price ? 'Limit' : 'Market';
+        const orderType = price==='0' ? 'Market' : 'Limit';
 
         const orderParams = {
             category: 'linear', // 永续合约
             symbol: symbol,
             side: side,
             orderType: orderType,
-            qty: qty.toString(),
+            qty: actualQty.toString(),
             reduceOnly: reduceOnly,
             takeProfit: takeProfit,
             stopLoss: stopLoss,
@@ -79,5 +133,6 @@ async function executeOrder({ symbol, side, qty, price, reduceOnly, takeProfit, 
 }
 
 module.exports = {
-    executeOrder
+    executeOrder,
+    getPosition
 };
