@@ -85,7 +85,8 @@ async function executeOrder({ symbol, side, qty, price, reduceOnly, takeProfit, 
         }
 
         // 根据是否有price参数决定订单类型
-        const orderType = price==='0' ? 'Market' : 'Limit';
+        // price 为 undefined、null、空字符串或 '0' 时使用市价单
+        const orderType = (!price || price === '0') ? 'Market' : 'Limit';
 
         const orderParams = {
             category: 'linear', // 永续合约
@@ -99,7 +100,7 @@ async function executeOrder({ symbol, side, qty, price, reduceOnly, takeProfit, 
         };
 
         // 如果是限价单，添加价格参数
-        if (price) {
+        if (orderType === 'Limit' && price) {
             orderParams.price = price.toString();
         }
 
