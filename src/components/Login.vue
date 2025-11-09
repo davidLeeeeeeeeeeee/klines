@@ -30,16 +30,17 @@ const handleLogin = async () => {
     console.log('登录成功:', response)
 
     // 保存 token 和用户信息
-    if (response.token) {
-      setToken(response.token)
+    // API 返回格式: { code, success, data: { token, id, username, equity } }
+    if (response.data && response.data.token) {
+      setToken(response.data.token)
       setUserInfo({
-        id: response.id,
-        username: response.username,
-        equity: response.equity
+        id: response.data.id,
+        username: response.data.username,
+        equity: response.data.equity
       })
 
       // 触发登录成功事件
-      emit('login-success', response)
+      emit('login-success', response.data)
     } else {
       throw new Error('登录响应中没有 token')
     }

@@ -23,8 +23,8 @@ export const request = async (url, options = {}) => {
   // 如果有 token，添加到请求头
   if (token) {
     defaultOptions.headers['Authorization'] = `Bearer ${token}`
-    // 有些 API 可能使用 token 字段
-    defaultOptions.headers['token'] = token
+    // API 使用 alphatoken 字段
+    defaultOptions.headers['alphatoken'] = token
   }
 
   // 合并配置
