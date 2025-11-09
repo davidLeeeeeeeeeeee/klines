@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import HelloWorld from './components/HelloWorld.vue'
+import Home from './components/Home.vue'
 import Login from './components/Login.vue'
 import { isAuthenticated } from './utils/auth'
 
@@ -32,7 +32,7 @@ onMounted(() => {
     <Login v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
 
     <!-- 已登录显示主页面 -->
-    <HelloWorld v-else msg="📊 账户历史净值曲线" @logout="handleLogout" />
+    <Home v-else msg="📊 账户历史净值曲线" @logout="handleLogout" />
   </div>
 </template>
 

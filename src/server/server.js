@@ -5,7 +5,7 @@ const { executeOrder } = require('./bybitClient');
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 80;
+const PORT =  80;
 
 // 交易信号映射
 const signalMapping = {
