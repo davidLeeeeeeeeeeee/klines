@@ -111,33 +111,39 @@ const handleKeyPress = (event) => {
 </template>
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
+
 .login-container {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1e222d 0%, #2b2b43 100%);
+  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
   padding: 20px;
 }
 
 .login-box {
   width: 100%;
   max-width: 400px;
-  background: #2b2b43;
+  background: #ffffff;
   border-radius: 12px;
   padding: 40px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
 }
 
 .login-title {
-  color: #42b983;
+  color: #1976d2;
   font-size: 28px;
   margin: 0 0 10px 0;
   text-align: center;
+  font-weight: 600;
 }
 
 .login-subtitle {
-  color: #d1d4dc;
+  color: #666666;
   font-size: 14px;
   text-align: center;
   margin: 0 0 30px 0;
@@ -147,11 +153,12 @@ const handleKeyPress = (event) => {
 .error-message {
   padding: 12px;
   margin-bottom: 20px;
-  background: #ff5252;
-  color: white;
+  background: #ffebee;
+  color: #c62828;
   border-radius: 6px;
   font-size: 14px;
   text-align: center;
+  border-left: 4px solid #d32f2f;
 }
 
 .form-group {
@@ -160,7 +167,7 @@ const handleKeyPress = (event) => {
 
 .form-group label {
   display: block;
-  color: #d1d4dc;
+  color: #333333;
   font-size: 14px;
   margin-bottom: 8px;
   font-weight: 500;
@@ -169,63 +176,80 @@ const handleKeyPress = (event) => {
 .form-group input {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #485c7b;
+  border: 1px solid #d0d0d0;
   border-radius: 6px;
-  background: #1e222d;
-  color: #d1d4dc;
+  background: #ffffff;
+  color: #333333;
   font-size: 14px;
-  transition: border-color 0.3s;
-  box-sizing: border-box;
+  transition: all 0.3s;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #42b983;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
 }
 
 .form-group input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  background: #f5f5f5;
 }
 
 .form-group input::placeholder {
-  color: #6b7280;
+  color: #999999;
 }
 
 .login-btn {
   width: 100%;
   padding: 12px;
-  background: #42b983;
+  background: #1976d2;
   color: white;
   border: none;
   border-radius: 6px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s;
 }
 
 .login-btn:hover:not(:disabled) {
-  background: #35a372;
+  background: #1565c0;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.2);
 }
 
 .login-btn:disabled {
-  background: #485c7b;
+  background: #bdbdbd;
   cursor: not-allowed;
 }
 
 .login-tips {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #485c7b;
+  border-top: 1px solid #e0e0e0;
 }
 
 .login-tips p {
-  color: #d1d4dc;
+  color: #666666;
   font-size: 13px;
   text-align: center;
   margin: 0;
-  opacity: 0.7;
+  opacity: 0.8;
+}
+
+/* 手机设备响应式 */
+@media (max-width: 480px) {
+  .login-box {
+    padding: 30px 20px;
+  }
+
+  .login-title {
+    font-size: 24px;
+  }
+
+  .form-group input {
+    font-size: 16px; /* 防止 iOS 自动放大 */
+  }
 }
 </style>
 

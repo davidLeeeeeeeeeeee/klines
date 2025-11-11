@@ -179,11 +179,30 @@ userInfo.value = getUserInfo()
 </template>
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
+
 .create-account-container {
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
   padding: 20px;
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .create-account-container {
+    max-width: 100%;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-account-container {
+    padding: 8px;
+  }
 }
 
 .header {
@@ -193,40 +212,48 @@ userInfo.value = getUserInfo()
   margin-bottom: 30px;
   flex-wrap: wrap;
   gap: 15px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 20px;
 }
 
 h1 {
-  color: #42b983;
+  color: #333333;
   margin: 0;
+  font-size: 24px;
+  font-weight: 600;
 }
 
 .user-info {
   display: flex;
   align-items: center;
   gap: 15px;
-  background: #2b2b43;
-  padding: 10px 20px;
-  border-radius: 8px;
+  background: #f5f5f5;
+  padding: 12px 20px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
 }
 
 .username {
-  color: #d1d4dc;
+  color: #666666;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .logout-btn {
-  padding: 6px 12px;
-  background: #ff5252;
+  padding: 8px 16px;
+  background: #d32f2f;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
-  transition: background 0.3s;
+  transition: all 0.3s;
+  font-weight: 500;
 }
 
 .logout-btn:hover {
-  background: #e04545;
+  background: #b71c1c;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .form-wrapper {
@@ -236,29 +263,32 @@ h1 {
 
 .form-card {
   width: 100%;
-  background: #2b2b43;
+  background: #ffffff;
   border-radius: 8px;
   padding: 30px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
 }
 
 .success-message {
   padding: 12px;
   margin-bottom: 20px;
-  background: #42b983;
-  color: white;
+  background: #e8f5e9;
+  color: #2e7d32;
   border-radius: 4px;
   font-size: 14px;
   text-align: center;
+  border-left: 4px solid #388e3c;
 }
 
 .error-message {
   padding: 12px;
   margin-bottom: 20px;
-  background: #ff5252;
-  color: white;
+  background: #ffebee;
+  color: #c62828;
   border-radius: 4px;
   font-size: 14px;
+  border-left: 4px solid #d32f2f;
 }
 
 form {
@@ -271,7 +301,7 @@ form {
 
 .form-group label {
   display: block;
-  color: #d1d4dc;
+  color: #333333;
   font-size: 14px;
   margin-bottom: 8px;
   font-weight: 500;
@@ -281,30 +311,31 @@ form {
 .form-group select {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #485c7b;
+  border: 1px solid #d0d0d0;
   border-radius: 6px;
-  background: #1e222d;
-  color: #d1d4dc;
+  background: #ffffff;
+  color: #333333;
   font-size: 14px;
-  transition: border-color 0.3s;
-  box-sizing: border-box;
+  transition: all 0.3s;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #42b983;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
 }
 
 .form-group input:disabled,
 .form-group select:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  background: #f5f5f5;
 }
 
 .help-text {
   margin: 6px 0 0 0;
-  color: #6b7280;
+  color: #999999;
   font-size: 12px;
 }
 
@@ -323,25 +354,27 @@ form {
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s;
 }
 
 .cancel-btn {
-  background: #485c7b;
-  color: #d1d4dc;
+  background: #757575;
+  color: white;
 }
 
 .cancel-btn:hover:not(:disabled) {
-  background: #5a6f8f;
+  background: #616161;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .submit-btn {
-  background: #42b983;
+  background: #388e3c;
   color: white;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #35a372;
+  background: #2e7d32;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cancel-btn:disabled,
@@ -352,26 +385,99 @@ form {
 
 .info-box {
   padding: 15px;
-  background: #1e222d;
+  background: #f5f5f5;
   border-radius: 6px;
-  border-left: 3px solid #42b983;
+  border-left: 3px solid #388e3c;
+  border: 1px solid #e0e0e0;
+  border-left: 3px solid #388e3c;
 }
 
 .info-box h3 {
-  color: #42b983;
+  color: #388e3c;
   margin: 0 0 10px 0;
   font-size: 14px;
+  font-weight: 600;
 }
 
 .info-box ul {
   margin: 0;
   padding-left: 20px;
-  color: #d1d4dc;
+  color: #666666;
   font-size: 13px;
 }
 
 .info-box li {
   margin: 5px 0;
+}
+
+/* 手机设备响应式 */
+@media (max-width: 768px) {
+  .create-account-container {
+    padding: 12px;
+  }
+
+  h1 {
+    font-size: 20px;
+    width: 100%;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    gap: 12px;
+  }
+
+  .user-info {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .username {
+    width: 100%;
+  }
+
+  .logout-btn {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .form-card {
+    padding: 20px;
+  }
+
+  .form-group input,
+  .form-group select {
+    font-size: 16px; /* 防止 iOS 自动放大 */
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-account-container {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .form-card {
+    padding: 16px;
+  }
 }
 </style>
 

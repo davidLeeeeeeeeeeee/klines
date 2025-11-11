@@ -117,30 +117,30 @@ const createChart = () => {
 
   chart = LightweightCharts.createChart(chartContainer.value, {
     width: chartContainer.value.clientWidth,
-    height: 500,
+    height: 400,
     layout: {
-      background: { type: 'solid', color: '#1e222d' },
-      textColor: '#d1d4dc',
+      background: { type: 'solid', color: '#ffffff' },
+      textColor: '#333333',
     },
     grid: {
-      vertLines: { color: '#2b2b43' },
-      horzLines: { color: '#2b2b43' },
+      vertLines: { color: '#e8e8e8' },
+      horzLines: { color: '#e8e8e8' },
     },
     crosshair: {
       mode: 1,
     },
     rightPriceScale: {
-      borderColor: '#485c7b',
+      borderColor: '#d0d0d0',
     },
     timeScale: {
-      borderColor: '#485c7b',
+      borderColor: '#d0d0d0',
       timeVisible: true,
       secondsVisible: false,
     },
   })
 
   lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
-    color: '#2962FF',
+    color: '#1976d2',
     lineWidth: 2,
     crosshairMarkerVisible: true,
     crosshairMarkerRadius: 6,
@@ -241,80 +241,110 @@ onMounted(() => {
 </template>
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
+
 .detail-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .detail-container {
+    max-width: 100%;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .detail-container {
+    padding: 8px;
+  }
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   flex-wrap: wrap;
   gap: 15px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 20px;
 }
 
 h1 {
-  color: #42b983;
+  color: #333333;
   margin: 0;
+  font-size: 24px;
+  font-weight: 600;
 }
 
 .user-info {
   display: flex;
   align-items: center;
   gap: 15px;
-  background: #2b2b43;
-  padding: 10px 20px;
-  border-radius: 8px;
+  background: #f5f5f5;
+  padding: 12px 20px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
 }
 
 .username {
-  color: #d1d4dc;
+  color: #666666;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .logout-btn {
-  padding: 6px 12px;
-  background: #ff5252;
+  padding: 8px 16px;
+  background: #d32f2f;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
-  transition: background 0.3s;
+  transition: all 0.3s;
+  font-weight: 500;
 }
 
 .logout-btn:hover {
-  background: #e04545;
+  background: #b71c1c;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .controls {
   display: flex;
   gap: 15px;
-  margin-bottom: 20px;
-  padding: 15px;
-  background: #2b2b43;
+  margin-bottom: 25px;
+  padding: 20px;
+  background: #f9f9f9;
   border-radius: 8px;
   flex-wrap: wrap;
   align-items: center;
+  border: 1px solid #e0e0e0;
 }
 
 .back-btn {
   padding: 8px 16px;
-  background: #485c7b;
+  background: #757575;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.3s;
+  transition: all 0.3s;
+  font-weight: 500;
 }
 
 .back-btn:hover {
-  background: #5a6f8f;
+  background: #616161;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .control-group {
@@ -324,72 +354,223 @@ h1 {
 }
 
 .control-group label {
-  color: #d1d4dc;
+  color: #555555;
   font-size: 14px;
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .control-group input {
-  padding: 6px 10px;
-  border: 1px solid #485c7b;
+  padding: 8px 12px;
+  border: 1px solid #d0d0d0;
   border-radius: 4px;
-  background: #1e222d;
-  color: #d1d4dc;
+  background: #ffffff;
+  color: #333333;
   font-size: 14px;
+  transition: border-color 0.3s;
 }
 
 .control-group input:focus {
   outline: none;
-  border-color: #2962FF;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
 }
 
 .refresh-btn {
-  padding: 6px 16px;
-  background: #2962FF;
+  padding: 8px 18px;
+  background: #1976d2;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.3s;
+  font-weight: 500;
+  transition: all 0.3s;
 }
 
 .refresh-btn:hover:not(:disabled) {
-  background: #1e4db7;
+  background: #1565c0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .refresh-btn:disabled {
-  background: #485c7b;
+  background: #bdbdbd;
   cursor: not-allowed;
 }
 
 .error-message {
-  padding: 12px;
-  margin-bottom: 15px;
-  background: #ff5252;
-  color: white;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  background: #ffebee;
+  color: #c62828;
   border-radius: 4px;
   font-size: 14px;
+  border-left: 4px solid #d32f2f;
 }
 
 .chart-info {
-  margin-bottom: 20px;
-  padding: 15px;
-  background: #2b2b43;
-  border-radius: 8px;
-  color: #d1d4dc;
+  margin-bottom: 25px;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  color: #666666;
+  border: 1px solid #e0e0e0;
 }
 
 .chart-info p {
-  margin: 5px 0;
+  margin: 6px 0;
   font-size: 14px;
+  line-height: 1.5;
 }
 
 .chart-wrapper {
   width: 100%;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
+}
+
+/* 平板设备 (768px - 1024px) */
+@media (max-width: 1024px) {
+  .detail-container {
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  .controls {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .control-group {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 150px;
+  }
+
+  .refresh-btn {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 120px;
+  }
+}
+
+/* 手机设备 (小于 768px) */
+@media (max-width: 768px) {
+  .detail-container {
+    padding: 12px;
+  }
+
+  h1 {
+    font-size: 20px;
+    width: 100%;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    gap: 12px;
+  }
+
+  .user-info {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .username {
+    width: 100%;
+  }
+
+  .logout-btn {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .controls {
+    flex-direction: column;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .back-btn {
+    width: 100%;
+  }
+
+  .control-group {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .control-group label {
+    width: 100%;
+  }
+
+  .control-group input {
+    width: 100%;
+  }
+
+  .refresh-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .chart-info {
+    padding: 12px;
+    margin-bottom: 20px;
+  }
+
+  .chart-info p {
+    font-size: 13px;
+    margin: 4px 0;
+  }
+}
+
+/* 超小屏幕 (小于 480px) */
+@media (max-width: 480px) {
+  .detail-container {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+
+  .controls {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .control-group input {
+    font-size: 16px; /* 防止 iOS 自动放大 */
+  }
+
+  .refresh-btn {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .chart-info {
+    padding: 10px;
+  }
+
+  .chart-info p {
+    font-size: 12px;
+  }
 }
 </style>
 
