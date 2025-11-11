@@ -5,7 +5,7 @@ const { executeOrder } = require('./bybitClient');
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 80;
+const PORT =  80;
 
 // 交易信号映射
 const signalMapping = {
@@ -39,10 +39,16 @@ app.post('/webhook', async (req, res) => {
         const orderParams = signalMapping[side];
 
         // 如果是平仓操作（reduceOnly=true），使用极大值确保完全平仓
-        // 根据 Bybit API 文档，传入 qty="0" 和 reduceOnly="true" 可以平掉最大数量的仓位
         let orderQty = qty;
+        let orderPrice = price;
+
         if (orderParams.reduceOnly) {
             orderQty = "999999"; // 使用极大值，确保完全平仓
+            // 平仓时如果没有指定价格，使用市价单（price='0'）
+            if (!orderPrice) {
+                orderPrice = '0';
+                console.log(`平仓操作: 使用市价单快速平仓`);
+            }
             console.log(`平仓操作: 使用极大值 qty=${orderQty} 确保完全平仓`);
         } else if (!qty) {
             // 开仓操作必须提供 qty
@@ -56,17 +62,19 @@ app.post('/webhook', async (req, res) => {
             symbol,
             side: orderParams.side,
             qty: orderQty,
-            price, // 传递价格参数，如果有则下限价单，否则下市价单
+            price: orderPrice, // 传递价格参数，如果有则下限价单，否则下市价单
             reduceOnly: orderParams.reduceOnly,
             takeProfit,
             stopLoss
         });
 
+        const finalOrderType = (!orderPrice || orderPrice === '0') ? 'Market' : 'Limit';
+
         res.json({
             success: true,
             data: result,
             signal: side,
-            orderType: price ? 'Limit' : 'Market', // 返回订单类型
+            orderType: finalOrderType, // 返回订单类型
             timestamp: new Date().toISOString()
         });
 

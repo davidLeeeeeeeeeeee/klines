@@ -85,7 +85,49 @@ async function executeOrder({ symbol, side, qty, price, reduceOnly, takeProfit, 
         }
 
         // 根据是否有price参数决定订单类型
-        const orderType = price==='0' ? 'Market' : 'Limit';
+        // price 为 undefined、null、空字符串或 '0' 时使用市价单
+        const orderType = (!price || price === '0') ? 'Market' : 'Limit';
+
+        // 验证并修正止盈止损价格
+        let finalTakeProfit = takeProfit;
+        let finalStopLoss = stopLoss;
+
+        if (takeProfit || stopLoss) {
+            const orderPrice = parseFloat(price || '0');
+            const tp = parseFloat(takeProfit || '0');
+            const sl = parseFloat(stopLoss || '0');
+
+            // 做空（Sell）：价格下跌赚钱
+            if (side === 'Sell') {
+                // 止盈应该低于开仓价，止损应该高于开仓价
+                if (tp > 0 && orderPrice > 0 && tp > orderPrice) {
+                    console.warn(`⚠️  做空订单止盈价格错误: ${tp} > ${orderPrice}，止盈价应该低于开仓价`);
+                    console.warn(`   建议：如果想在价格跌到 ${tp} 时止盈，请将止盈价设为低于 ${orderPrice} 的值`);
+                    // 不自动修正，让用户知道错误
+                    finalTakeProfit = undefined;
+                }
+                if (sl > 0 && orderPrice > 0 && sl < orderPrice) {
+                    console.warn(`⚠️  做空订单止损价格错误: ${sl} < ${orderPrice}，止损价应该高于开仓价`);
+                    console.warn(`   建议：如果想在价格涨到 ${sl} 时止损，请将止损价设为高于 ${orderPrice} 的值`);
+                    // 不自动修正，让用户知道错误
+                    finalStopLoss = undefined;
+                }
+            }
+            // 做多（Buy）：价格上涨赚钱
+            else if (side === 'Buy') {
+                // 止盈应该高于开仓价，止损应该低于开仓价
+                if (tp > 0 && orderPrice > 0 && tp < orderPrice) {
+                    console.warn(`⚠️  做多订单止盈价格错误: ${tp} < ${orderPrice}，止盈价应该高于开仓价`);
+                    console.warn(`   建议：如果想在价格涨到 ${tp} 时止盈，请将止盈价设为高于 ${orderPrice} 的值`);
+                    finalTakeProfit = undefined;
+                }
+                if (sl > 0 && orderPrice > 0 && sl > orderPrice) {
+                    console.warn(`⚠️  做多订单止损价格错误: ${sl} > ${orderPrice}，止损价应该低于开仓价`);
+                    console.warn(`   建议：如果想在价格跌到 ${sl} 时止损，请将止损价设为低于 ${orderPrice} 的值`);
+                    finalStopLoss = undefined;
+                }
+            }
+        }
 
         const orderParams = {
             category: 'linear', // 永续合约
@@ -94,12 +136,12 @@ async function executeOrder({ symbol, side, qty, price, reduceOnly, takeProfit, 
             orderType: orderType,
             qty: actualQty.toString(),
             reduceOnly: reduceOnly,
-            takeProfit: takeProfit,
-            stopLoss: stopLoss,
+            takeProfit: finalTakeProfit,
+            stopLoss: finalStopLoss,
         };
 
         // 如果是限价单，添加价格参数
-        if (price) {
+        if (orderType === 'Limit' && price) {
             orderParams.price = price.toString();
         }
 

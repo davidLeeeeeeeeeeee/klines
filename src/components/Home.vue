@@ -258,6 +258,13 @@ onMounted(() => {
     </div>
 
     <div ref="chartContainer" class="chart-wrapper"></div>
+
+    <!-- 底部退出登录按钮 (手机模式) -->
+    <div class="bottom-logout">
+      <button @click="handleLogout" class="bottom-logout-btn">
+        🚪 退出登录
+      </button>
+    </div>
   </div>
 </template>
 
@@ -397,6 +404,40 @@ h1 {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* 底部退出登录按钮 (手机模式) */
+.bottom-logout {
+  margin-top: 30px;
+  padding: 20px 0;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid #2b2b43;
+}
+
+.bottom-logout-btn {
+  width: 100%;
+  max-width: 400px;
+  padding: 15px 30px;
+  background: #ff5252;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3);
+}
+
+.bottom-logout-btn:hover {
+  background: #e04545;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 82, 82, 0.4);
+}
+
+.bottom-logout-btn:active {
+  transform: translateY(0);
 }
 </style>
 

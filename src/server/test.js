@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = 'http://111.68.9.222:3000';
+const BASE_URL = 'http://103.70.76.214:80';
 
 // 颜色输出
 const colors = {
@@ -66,8 +66,8 @@ async function openETHUSDT() {
     await testWebhook('开多仓 (ENTER_LONG)', {
         symbol: 'ETHUSDT',
         side: 'ENTER_LONG',
-        qty: '0.01',
-        price: '3400',
+        qty: '0.01',  // 小数量测试，约需 34 USDT（价格3400时）
+        price: '0',   // 使用市价单，更容易成交
         trigger_time: new Date().toISOString(),
         max_lag: '10',
         strategy_id: 'quick-test-' + Date.now(),
@@ -77,13 +77,14 @@ async function openETHUSDT() {
 
 // 平仓 ETHUSDT（多仓平）
 async function closeETHUSDT() {
-    log('\n🎯 平仓 ETHUSDT - 平多仓和平空仓\n', 'yellow');
+    log('\n🎯 平仓 ETHUSDT - 平多仓\n', 'yellow');
 
-    // 平多仓
+    // 平多仓 - 不传 qty 和 price，自动查询持仓并使用市价单平仓
     await testWebhook('平多仓 ETHUSDT (EXIT_LONG)', {
         symbol: 'ETHUSDT',
         side: 'EXIT_LONG',
-        qty: '0.01',
+        // qty 不传，会自动查询持仓数量
+        // price 不传，会使用市价单快速平仓
         trigger_time: new Date().toISOString(),
         max_lag: '10',
         strategy_id: 'close-eth-' + Date.now(),
@@ -108,11 +109,12 @@ async function openDownETHUSDT() {
 async function closeDownETHUSDT() {
     log('\n🎯 平仓 ETHUSDT - 平空仓\n', 'yellow');
 
-    // 平空仓
-    await testWebhook('平空仓 ETHUSDT (EXIT_LONG)', {
+    // 平空仓 - 不传 qty 和 price，自动查询持仓并使用市价单平仓
+    await testWebhook('平空仓 ETHUSDT (EXIT_SHORT)', {
         symbol: 'ETHUSDT',
         side: 'EXIT_SHORT',
-        qty: '0.01',
+        // qty 不传，会自动查询持仓数量
+        // price 不传，会使用市价单快速平仓
     });
 
 }
