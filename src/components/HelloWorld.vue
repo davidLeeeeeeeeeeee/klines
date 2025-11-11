@@ -87,9 +87,16 @@ const convertToChartData = (apiData) => {
   const chartData = []
 
   for (let i = 0; i < lineX.length; i++) {
-    // lineX 是时间字符串，需要转换为 Unix 时间戳（秒）
+    // lineX 是时间字符串格式如 "20251105"，需要转换为 Unix 时间戳（秒）
     const timeStr = lineX[i]
-    const timestamp = new Date(timeStr).getTime() / 1000
+
+    // 将 "20251105" 格式转换为 "2025-11-05"
+    const year = timeStr.substring(0, 4)
+    const month = timeStr.substring(4, 6)
+    const day = timeStr.substring(6, 8)
+    const formattedDate = `${year}-${month}-${day}`
+
+    const timestamp = new Date(formattedDate).getTime() / 1000
 
     chartData.push({
       time: timestamp,
@@ -145,9 +152,16 @@ const createChart = () => {
 // 加载数据并更新图表
 const loadData = async () => {
   try {
-    const apiData = await fetchEquityData()
+    const response = await fetchEquityData()
+    console.log('API 响应:', response)
+
+    // API 返回格式: { code, success, data: { lineX, lineY } }
+    const apiData = response.data || response
+    console.log('提取的数据:', apiData)
+
     const chartData = convertToChartData(apiData)
-    
+    console.log('转换后的图表数据:', chartData)
+
     if (chartData.length > 0) {
       lineSeries.setData(chartData)
       chart.timeScale().fitContent()
@@ -169,6 +183,12 @@ const refreshData = () => {
 onMounted(() => {
   // 获取用户信息
   userInfo.value = getUserInfo()
+
+  // 使用登录用户的 id 作为 accountId
+  if (userInfo.value && userInfo.value.id) {
+    accountId.value = userInfo.value.id
+    console.log('使用用户ID作为账户ID:', accountId.value)
+  }
 
   initDateRange()
   createChart()
