@@ -477,3 +477,82 @@
 ```text
 boolean
 ```
+
+## 历史净值折线图
+
+
+**接口地址**:`/alphanow-admin/api/user/history/line`
+
+
+**请求方式**:`POST`
+
+
+**请求数据类型**:`application/json`
+
+
+**响应数据类型**:`*/*`
+
+
+**接口描述**:
+
+
+**请求示例**:
+
+
+```javascript
+{
+  "endTime": "",
+  "exchange": "",
+  "startTime": ""
+}
+```
+
+
+**请求参数**:
+
+
+**请求参数**:
+
+
+| 参数名称 | 参数说明 | 请求类型    | 是否必须 | 数据类型 | schema |
+| -------- | -------- | ----- | -------- | -------- | ------ |
+|reqVO|用户历史净值请求参数|body|true|UserHistoryLineReq|UserHistoryLineReq|
+|&emsp;&emsp;endTime|结束时间:yyyy-MM-dd HH:mm:ss||true|string(date-time)||
+|&emsp;&emsp;exchange|平台:BYBIT,可用值:BYBIT||false|string||
+|&emsp;&emsp;startTime|开始时间:yyyy-MM-dd HH:mm:ss||true|string(date-time)||
+
+
+**响应状态**:
+
+
+| 状态码 | 说明 | schema |
+| -------- | -------- | ----- | 
+|200|OK|HistoryLineVO|
+|201|Created||
+|401|Unauthorized||
+|403|Forbidden||
+|404|Not Found||
+
+
+**响应参数**:
+
+
+| 参数名称 | 参数说明 | 类型 | schema |
+| -------- | -------- | ----- |----- | 
+|createTime|创建时间|string(date-time)|string(date-time)|
+|id|ID|integer(int64)|integer(int64)|
+|lineX|X轴|array||
+|lineY|Y轴|array||
+|updateTime|更新时间|string(date-time)|string(date-time)|
+
+
+**响应示例**:
+```javascript
+{
+	"createTime": "",
+	"id": 0,
+	"lineX": [],
+	"lineY": [],
+	"updateTime": ""
+}
+```

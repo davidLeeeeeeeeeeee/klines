@@ -1,38 +1,12 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import Home from './components/Home.vue'
-import Login from './components/Login.vue'
-import { isAuthenticated } from './utils/auth'
+import { useRouter } from 'vue-router'
 
-const isLoggedIn = ref(false)
-
-// 检查登录状态
-const checkAuth = () => {
-  isLoggedIn.value = isAuthenticated()
-}
-
-// 登录成功处理
-const handleLoginSuccess = () => {
-  isLoggedIn.value = true
-}
-
-// 退出登录处理
-const handleLogout = () => {
-  isLoggedIn.value = false
-}
-
-onMounted(() => {
-  checkAuth()
-})
+const router = useRouter()
 </script>
 
 <template>
   <div id="app">
-    <!-- 未登录显示登录页面 -->
-    <Login v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
-
-    <!-- 已登录显示主页面 -->
-    <Home v-else msg="📊 账户历史净值曲线" @logout="handleLogout" />
+    <router-view />
   </div>
 </template>
 

@@ -1,9 +1,10 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { post } from '../utils/request'
 import { setToken, setUserInfo } from '../utils/auth'
 
-const emit = defineEmits(['login-success'])
+const router = useRouter()
 
 const username = ref('')
 const password = ref('')
@@ -39,8 +40,8 @@ const handleLogin = async () => {
         equity: response.data.equity
       })
 
-      // 触发登录成功事件
-      emit('login-success', response.data)
+      // 登录成功，导航到首页
+      router.push('/home')
     } else {
       throw new Error('登录响应中没有 token')
     }

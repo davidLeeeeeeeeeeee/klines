@@ -8,16 +8,19 @@ import { getUserInfo, clearAuth } from '../utils/auth'
 const router = useRouter()
 
 const props = defineProps({
-  msg: String,
+  accountId: {
+    type: Number,
+    required: true
+  }
 })
 
 const chartContainer = ref(null)
 const loading = ref(false)
 const error = ref(null)
-const exchange = ref('BYBIT') // 交易所类型
 const startDate = ref('')
 const endDate = ref('')
 const userInfo = ref(null)
+const accountInfo = ref(null)
 let chart = null
 let lineSeries = null
 
@@ -25,35 +28,33 @@ let lineSeries = null
 const initDateRange = () => {
   const end = new Date()
   const start = new Date()
-  start.setDate(start.getDate() - 30) // 默认最近30天
-
+  start.setDate(start.getDate() - 30)
+  
   const formatDate = (date) => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
   }
-
+  
   startDate.value = formatDate(start)
   endDate.value = formatDate(end)
 }
 
-// 获取用户历史净值数据
+// 获取账户历史净值数据
 const fetchEquityData = async () => {
   loading.value = true
   error.value = null
 
   try {
     const requestData = {
+      accountId: props.accountId,
       startTime: `${startDate.value} 00:00:00`,
-      endTime: `${endDate.value} 23:59:59`,
-      exchange: exchange.value
+      endTime: `${endDate.value} 23:59:59`
     }
 
-    console.log('请求用户历史净值数据:', requestData)
-
-    // 调用用户历史净值接口
-    const data = await post('/alphanow-admin/api/user/history/line', requestData)
+    console.log('请求账户历史净值数据:', requestData)
+    const data = await post('/alphanow-admin/api/account/history/line', requestData)
     console.log('接收到的数据:', data)
 
     return data
@@ -61,7 +62,6 @@ const fetchEquityData = async () => {
     console.error('获取数据失败:', err)
     error.value = err.message
 
-    // 如果是未授权错误，触发登出
     if (err.message.includes('未授权')) {
       handleLogout()
     }
@@ -78,12 +78,12 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-// 导航到子账户列表
-const goToAccounts = () => {
+// 返回账户列表
+const goBack = () => {
   router.push('/accounts')
 }
 
-// 将API数据转换为图表数据格式
+// 转换数据格式
 const convertToChartData = (apiData) => {
   if (!apiData || !apiData.lineX || !apiData.lineY) {
     return []
@@ -93,10 +93,7 @@ const convertToChartData = (apiData) => {
   const chartData = []
 
   for (let i = 0; i < lineX.length; i++) {
-    // lineX 是时间字符串格式如 "20251105"，需要转换为 Unix 时间戳（秒）
     const timeStr = lineX[i]
-
-    // 将 "20251105" 格式转换为 "2025-11-05"
     const year = timeStr.substring(0, 4)
     const month = timeStr.substring(4, 6)
     const day = timeStr.substring(6, 8)
@@ -110,9 +107,7 @@ const convertToChartData = (apiData) => {
     })
   }
 
-  // 按时间排序
   chartData.sort((a, b) => a.time - b.time)
-
   return chartData
 }
 
@@ -144,7 +139,6 @@ const createChart = () => {
     },
   })
 
-  // 添加折线系列（用于净值曲线）
   lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
     color: '#2962FF',
     lineWidth: 2,
@@ -155,18 +149,12 @@ const createChart = () => {
   })
 }
 
-// 加载数据并更新图表
+// 加载数据
 const loadData = async () => {
   try {
     const response = await fetchEquityData()
-    console.log('API 响应:', response)
-
-    // API 返回格式: { code, success, data: { lineX, lineY } }
     const apiData = response.data || response
-    console.log('提取的数据:', apiData)
-
     const chartData = convertToChartData(apiData)
-    console.log('转换后的图表数据:', chartData)
 
     if (chartData.length > 0) {
       lineSeries.setData(chartData)
@@ -187,14 +175,11 @@ const refreshData = () => {
 }
 
 onMounted(() => {
-  // 获取用户信息
   userInfo.value = getUserInfo()
-
   initDateRange()
   createChart()
   loadData()
 
-  // 响应式调整
   const handleResize = () => {
     if (chart && chartContainer.value) {
       chart.applyOptions({
@@ -205,7 +190,6 @@ onMounted(() => {
 
   window.addEventListener('resize', handleResize)
 
-  // 保存清理函数
   onUnmounted(() => {
     window.removeEventListener('resize', handleResize)
     if (chart) {
@@ -216,23 +200,17 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="equity-container">
+  <div class="detail-container">
     <div class="header">
-      <h1>{{ msg }}</h1>
+      <h1>📊 子账户详情 - ID: {{ accountId }}</h1>
       <div class="user-info" v-if="userInfo">
         <span class="username">👤 {{ userInfo.username }}</span>
-        <span class="equity">💰 净值: {{ userInfo.equity }}</span>
         <button @click="handleLogout" class="logout-btn">退出登录</button>
       </div>
     </div>
 
     <div class="controls">
-      <div class="control-group">
-        <label>交易所:</label>
-        <select v-model="exchange" class="select-input">
-          <option value="BYBIT">BYBIT</option>
-        </select>
-      </div>
+      <button @click="goBack" class="back-btn">← 返回列表</button>
 
       <div class="control-group">
         <label>开始日期:</label>
@@ -247,10 +225,6 @@ onMounted(() => {
       <button @click="refreshData" :disabled="loading" class="refresh-btn">
         {{ loading ? '加载中...' : '刷新数据' }}
       </button>
-
-      <button @click="goToAccounts" class="accounts-btn">
-        📋 管理子账户
-      </button>
     </div>
 
     <div v-if="error" class="error-message">
@@ -260,22 +234,14 @@ onMounted(() => {
     <div class="chart-info">
       <p>📈 账户历史净值曲线</p>
       <p>💡 支持缩放、拖拽、十字光标等交互功能</p>
-      <p>🔄 可以选择不同的时间范围和账号查看净值变化</p>
     </div>
 
     <div ref="chartContainer" class="chart-wrapper"></div>
-
-    <!-- 底部退出登录按钮 (手机模式) -->
-    <div class="bottom-logout">
-      <button @click="handleLogout" class="bottom-logout-btn">
-        🚪 退出登录
-      </button>
-    </div>
   </div>
 </template>
 
 <style scoped>
-.equity-container {
+.detail-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
@@ -305,8 +271,7 @@ h1 {
   border-radius: 8px;
 }
 
-.username,
-.equity {
+.username {
   color: #d1d4dc;
   font-size: 14px;
 }
@@ -337,6 +302,21 @@ h1 {
   align-items: center;
 }
 
+.back-btn {
+  padding: 8px 16px;
+  background: #485c7b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.back-btn:hover {
+  background: #5a6f8f;
+}
+
 .control-group {
   display: flex;
   align-items: center;
@@ -363,22 +343,7 @@ h1 {
   border-color: #2962FF;
 }
 
-.select-input {
-  padding: 6px 10px;
-  border: 1px solid #485c7b;
-  border-radius: 4px;
-  background: #1e222d;
-  color: #d1d4dc;
-  font-size: 14px;
-}
-
-.select-input:focus {
-  outline: none;
-  border-color: #2962FF;
-}
-
-.refresh-btn,
-.accounts-btn {
+.refresh-btn {
   padding: 6px 16px;
   background: #2962FF;
   color: white;
@@ -389,22 +354,13 @@ h1 {
   transition: background 0.3s;
 }
 
-.refresh-btn:hover:not(:disabled),
-.accounts-btn:hover {
+.refresh-btn:hover:not(:disabled) {
   background: #1e4db7;
 }
 
 .refresh-btn:disabled {
   background: #485c7b;
   cursor: not-allowed;
-}
-
-.accounts-btn {
-  background: #42b983;
-}
-
-.accounts-btn:hover {
-  background: #35a372;
 }
 
 .error-message {
@@ -434,40 +390,6 @@ h1 {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-/* 底部退出登录按钮 (手机模式) */
-.bottom-logout {
-  margin-top: 30px;
-  padding: 20px 0;
-  display: flex;
-  justify-content: center;
-  border-top: 1px solid #2b2b43;
-}
-
-.bottom-logout-btn {
-  width: 100%;
-  max-width: 400px;
-  padding: 15px 30px;
-  background: #ff5252;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3);
-}
-
-.bottom-logout-btn:hover {
-  background: #e04545;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 82, 82, 0.4);
-}
-
-.bottom-logout-btn:active {
-  transform: translateY(0);
 }
 </style>
 
