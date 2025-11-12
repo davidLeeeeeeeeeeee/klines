@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import * as LightweightCharts from 'lightweight-charts'
 import { post } from '../utils/request'
 import { getUserInfo, clearAuth } from '../utils/auth'
+import { parseTimeString, detectDataGranularity } from '../utils/timeParser'
 
 const router = useRouter()
 
@@ -18,6 +19,7 @@ const exchange = ref('BYBIT') // 交易所类型
 const startDate = ref('')
 const endDate = ref('')
 const userInfo = ref(null)
+const dataGranularity = ref('未知') // 数据粒度（分钟/小时/日）
 let chart = null
 let lineSeries = null
 
@@ -92,17 +94,15 @@ const convertToChartData = (apiData) => {
   const { lineX, lineY } = apiData
   const chartData = []
 
+  // 检测数据粒度
+  dataGranularity.value = detectDataGranularity(lineX)
+  console.log(`检测到数据粒度: ${dataGranularity.value}`)
+
   for (let i = 0; i < lineX.length; i++) {
-    // lineX 是时间字符串格式如 "20251105"，需要转换为 Unix 时间戳（秒）
     const timeStr = lineX[i]
 
-    // 将 "20251105" 格式转换为 "2025-11-05"
-    const year = timeStr.substring(0, 4)
-    const month = timeStr.substring(4, 6)
-    const day = timeStr.substring(6, 8)
-    const formattedDate = `${year}-${month}-${day}`
-
-    const timestamp = new Date(formattedDate).getTime() / 1000
+    // 使用通用时间解析函数，自动识别格式
+    const timestamp = parseTimeString(timeStr)
 
     chartData.push({
       time: timestamp,
@@ -141,6 +141,10 @@ const createChart = () => {
       borderColor: '#d0d0d0',
       timeVisible: true,
       secondsVisible: false,
+    },
+    localization: {
+      locale: 'zh-CN',
+      dateFormat: 'yyyy年MM月dd日',
     },
   })
 
@@ -259,6 +263,7 @@ onMounted(() => {
 
     <div class="chart-info">
       <p>📈 主账户历史净值曲线</p>
+      <p class="granularity-info">⏱️ 数据粒度: {{ dataGranularity }}</p>
     </div>
 
     <div ref="chartContainer" class="chart-wrapper"></div>
@@ -449,6 +454,11 @@ h1 {
   margin: 6px 0;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.granularity-info {
+  color: #1976d2;
+  font-weight: 600;
 }
 
 .chart-wrapper {

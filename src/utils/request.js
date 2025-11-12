@@ -1,7 +1,7 @@
 // HTTP 请求工具函数
 import { getToken } from './auth'
 
-const API_BASE_URL = 'http://170.75.168.24:8755'
+const API_BASE_URL = 'https://alphanow.io'
 
 /**
  * 通用请求函数
