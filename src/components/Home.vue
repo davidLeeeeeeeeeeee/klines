@@ -258,9 +258,7 @@ onMounted(() => {
     </div>
 
     <div class="chart-info">
-      <p>📈 账户历史净值曲线</p>
-      <p>💡 支持缩放、拖拽、十字光标等交互功能</p>
-      <p>🔄 可以选择不同的时间范围和账号查看净值变化</p>
+      <p>📈 主账户历史净值曲线</p>
     </div>
 
     <div ref="chartContainer" class="chart-wrapper"></div>

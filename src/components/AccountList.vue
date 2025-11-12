@@ -161,17 +161,25 @@ onMounted(() => {
       <table>
         <thead>
           <tr>
+            <th>操作</th>
             <th>账户ID</th>
             <th>API Key</th>
             <th>交易所</th>
             <th>净值</th>
             <th>状态</th>
             <th>创建时间</th>
-            <th>操作</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="account in accounts" :key="account.id">
+            <td class="actions">
+              <button @click="viewAccountDetail(account.id)" class="action-btn view-btn">
+                查看
+              </button>
+              <button @click="deleteAccount(account.id)" class="action-btn delete-btn">
+                删除
+              </button>
+            </td>
             <td>{{ account.id }}</td>
             <td class="api-key">{{ account.apiKey }}</td>
             <td>{{ account.exchange }}</td>
@@ -182,14 +190,6 @@ onMounted(() => {
               </span>
             </td>
             <td>{{ new Date(account.createTime).toLocaleDateString() }}</td>
-            <td class="actions">
-              <button @click="viewAccountDetail(account.id)" class="action-btn view-btn">
-                查看
-              </button>
-              <button @click="deleteAccount(account.id)" class="action-btn delete-btn">
-                删除
-              </button>
-            </td>
           </tr>
         </tbody>
       </table>
@@ -628,16 +628,14 @@ td {
     flex: none;
   }
 
-  .filter-group,
-  .sort-group {
+  .filter-group {
     width: 100%;
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
   }
 
-  .filter-group label,
-  .sort-group label {
+  .filter-group label {
     width: 100%;
   }
 
@@ -646,7 +644,12 @@ td {
   }
 
   .sort-group {
+    width: 100%;
     flex-wrap: wrap;
+  }
+
+  .sort-group label {
+    width: 100%;
   }
 
   .sort-btn {

@@ -232,8 +232,7 @@ onMounted(() => {
     </div>
 
     <div class="chart-info">
-      <p>📈 账户历史净值曲线</p>
-      <p>💡 支持缩放、拖拽、十字光标等交互功能</p>
+      <p>📈 子账户历史净值曲线</p>
     </div>
 
     <div ref="chartContainer" class="chart-wrapper"></div>
