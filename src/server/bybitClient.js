@@ -3,8 +3,8 @@ const { RestClientV5 } = require('bybit-api');
 // 从环境变量读取配置
 const client = new RestClientV5({
     testnet: process.env.BYBIT_TESTNET === 'true',
-    key: 'APJWtTOwYbWYqdNPNf',
-    secret: 'BoDzOVXYXBpvo1kvpLSmGb847RJOgesCSvGu',
+    key: 'ewqkFltRmLH4IIWIap',
+    secret: 'BB2i37X4GbPOf4WpbgzASOiQ4Nt7enIoCcRv',
     recv_window: 200000, // 增加时间窗口到200秒，允许更大的时间偏差
     enable_time_sync: true, // 启用时间同步，自动对齐服务器时间
     syncTimeBeforePrivateRequests: true, // 每次私有请求前同步一次时间，尽量避免时间漂移
