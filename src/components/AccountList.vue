@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { post } from '../utils/request'
 import { getUserInfo, clearAuth } from '../utils/auth'
+import { SortUp, SortDown } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -15,6 +16,8 @@ const pageSize = ref(10)
 const total = ref(0)
 const sortType = ref(0) // 0=时间倒序，1=净值倒序，2=净值升序
 const initFilter = ref('') // 空=全部，0=未初始化，1=已初始化
+const sortField = ref('') // 当前排序字段: 'time' 或 'equity'，空表示未排序
+const sortOrder = ref('desc') // 当前排序方向: 'asc' 或 'desc'
 
 // 获取账户列表
 const fetchAccounts = async () => {
@@ -90,6 +93,28 @@ const changeSortType = (type) => {
   fetchAccounts()
 }
 
+// 切换排序字段和方向
+const toggleSort = (field) => {
+  if (sortField.value === field) {
+    // 如果点击的是当前排序字段，切换排序方向
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    // 如果点击的是新字段，设置为该字段并默认降序
+    sortField.value = field
+    sortOrder.value = 'desc'
+  }
+
+  // 根据字段和方向设置 sortType
+  if (field === 'time') {
+    sortType.value = 0 // 时间倒序
+  } else if (field === 'equity') {
+    sortType.value = sortOrder.value === 'desc' ? 1 : 2 // 净值倒序或升序
+  }
+
+  page.value = 1
+  fetchAccounts()
+}
+
 onMounted(() => {
   userInfo.value = getUserInfo()
   fetchAccounts()
@@ -118,31 +143,6 @@ onMounted(() => {
             <option value="1">已初始化</option>
           </select>
         </div>
-
-        <div class="sort-group">
-          <label>排序:</label>
-          <button
-            :class="{ active: sortType === 0 }"
-            @click="changeSortType(0)"
-            class="sort-btn"
-          >
-            时间倒序
-          </button>
-          <button
-            :class="{ active: sortType === 1 }"
-            @click="changeSortType(1)"
-            class="sort-btn"
-          >
-            净值倒序
-          </button>
-          <button
-            :class="{ active: sortType === 2 }"
-            @click="changeSortType(2)"
-            class="sort-btn"
-          >
-            净值升序
-          </button>
-        </div>
       </div>
 
       <button @click="createNewAccount" class="create-btn">➕ 新建子账户</button>
@@ -152,23 +152,55 @@ onMounted(() => {
       ⚠️ {{ error }}
     </div>
 
-    <div v-if="loading" class="loading">
+    <div v-if="loading && accounts.length === 0" class="loading">
       加载中...
     </div>
 
-    <div v-else-if="accounts.length === 0" class="empty-state">
+    <div v-else-if="!loading && accounts.length === 0" class="empty-state">
       <p>暂无子账户，请创建一个新的子账户</p>
     </div>
 
-    <div v-else class="accounts-table">
+    <div v-if="accounts.length > 0" class="accounts-table" :class="{ 'loading-overlay': loading }">
       <table>
         <thead>
           <tr>
             <th>UID</th>
             <th>交易所</th>
-            <th>净值</th>
+            <th class="sortable" @click="toggleSort('equity')">
+              净值
+              <span class="sort-icon">
+                <SortDown
+                  :class="{
+                    'icon-default': sortField !== 'equity' || sortOrder !== 'desc',
+                    'icon-active': sortField === 'equity' && sortOrder === 'desc'
+                  }"
+                />
+                <SortUp
+                  :class="{
+                    'icon-default': sortField !== 'equity' || sortOrder !== 'asc',
+                    'icon-active': sortField === 'equity' && sortOrder === 'asc'
+                  }"
+                />
+              </span>
+            </th>
             <th>状态</th>
-            <th>创建时间</th>
+            <th class="sortable" @click="toggleSort('time')">
+              创建时间
+              <span class="sort-icon">
+                <SortDown
+                  :class="{
+                    'icon-default': sortField !== 'time' || sortOrder !== 'desc',
+                    'icon-active': sortField === 'time' && sortOrder === 'desc'
+                  }"
+                />
+                <SortUp
+                  :class="{
+                    'icon-default': sortField !== 'time' || sortOrder !== 'asc',
+                    'icon-active': sortField === 'time' && sortOrder === 'asc'
+                  }"
+                />
+              </span>
+            </th>
             <th>操作</th>
           </tr>
         </thead>
@@ -347,15 +379,13 @@ h1 {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.filter-group,
-.sort-group {
+.filter-group {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.filter-group label,
-.sort-group label {
+.filter-group label {
   color: #555555;
   font-size: 14px;
   font-weight: 500;
@@ -374,32 +404,6 @@ h1 {
 .filter-group select:focus {
   outline: none;
   border-color: #1976d2;
-}
-
-.sort-btn {
-  padding: 8px 12px;
-  background: #e0e0e0;
-  color: #333333;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.3s;
-  font-weight: 500;
-}
-
-.sort-btn.active {
-  background: #1976d2;
-  color: white;
-  border-color: #1976d2;
-}
-
-.sort-btn:hover {
-  background: #d0d0d0;
-}
-
-.sort-btn.active:hover {
-  background: #1565c0;
 }
 
 .error-message {
@@ -432,6 +436,12 @@ h1 {
   border-radius: 8px;
   margin-bottom: 20px;
   border: 1px solid #e0e0e0;
+  position: relative;
+}
+
+.accounts-table.loading-overlay {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 table {
@@ -450,6 +460,45 @@ th {
   font-weight: 600;
   border-bottom: 2px solid #e0e0e0;
   color: #555555;
+}
+
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+th.sortable:hover {
+  background-color: #eeeeee;
+}
+
+.sort-icon {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  margin-left: 0px;
+  vertical-align: middle;
+  gap: 0;
+}
+
+.sort-icon .icon-default {
+  width: 14px;
+  height: 14px; 
+  color: #cccccc;
+  transition: all 0.2s;
+}
+
+.sort-icon .icon-default:nth-child(2),
+.sort-icon .icon-active:nth-child(2) {
+  margin-left: -8px;
+}
+
+.sort-icon .icon-active {
+  width: 14px;
+  height: 14px;
+  color: #1976d2;
+  transition: all 0.2s;
 }
 
 td {
@@ -580,13 +629,8 @@ td {
     min-width: 100px;
   }
 
-  .filter-group,
-  .sort-group {
+  .filter-group {
     flex: 1 1 100%;
-  }
-
-  .sort-btn {
-    flex: 1;
   }
 }
 
@@ -651,20 +695,6 @@ td {
 
   .filter-group select {
     width: 100%;
-  }
-
-  .sort-group {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .sort-group label {
-    width: 100%;
-  }
-
-  .sort-btn {
-    flex: 1 1 calc(33.33% - 5px);
-    min-width: 80px;
   }
 
   /* 表格响应式 */
@@ -742,11 +772,7 @@ td {
     gap: 8px;
   }
 
-  .sort-btn {
-    flex: 1 1 calc(50% - 4px);
-    min-width: 60px;
-    font-size: 12px;
-  }
+
 
   .accounts-table {
     margin: 0 -8px;
