@@ -1,5 +1,5 @@
 // HTTP 请求工具函数
-import { getToken } from './auth'
+import { getToken, clearAuth } from './auth'
 
 const API_BASE_URL = 'https://alphanow.io'
 
@@ -55,6 +55,16 @@ export const request = async (url, options = {}) => {
     }
 
     const data = await response.json()
+
+    // 统一处理登录失效（code: 3004）
+    if (data.code === 3004) {
+      console.log('登录已失效，清理数据并跳转到登录页面')
+      clearAuth()
+      // 跳转到登录页面
+      window.location.href = '/login'
+      throw new Error('登录已失效，请重新登录')
+    }
+
     return data
   } catch (error) {
     console.error('请求失败:', error)

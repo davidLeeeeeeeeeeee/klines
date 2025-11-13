@@ -25,22 +25,25 @@ const accountInfo = ref(null)
 const dataGranularity = ref('未知') // 数据粒度（分钟/小时/日）
 let chart = null
 let lineSeries = null
+let autoRefreshTimer = null // 自动刷新定时器
 
 // 初始化日期范围
 const initDateRange = () => {
   const end = new Date()
   const start = new Date()
-  start.setDate(start.getDate() - 30)
-  
-  const formatDate = (date) => {
+  start.setHours(start.getHours() - 6) // 默认最近6小时
+
+  const formatDateTime = (date) => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
   }
-  
-  startDate.value = formatDate(start)
-  endDate.value = formatDate(end)
+
+  startDate.value = formatDateTime(start)
+  endDate.value = formatDateTime(end)
 }
 
 // 获取账户历史净值数据
@@ -49,10 +52,39 @@ const fetchEquityData = async () => {
   error.value = null
 
   try {
+    // 格式化时间为 "YYYY-MM-DD HH:mm:ss"
+    const formatToApiTime = (dateTimeStr) => {
+      if (!dateTimeStr) {
+        console.error('时间字符串为空')
+        return ''
+      }
+
+      const date = new Date(dateTimeStr)
+
+      if (isNaN(date.getTime())) {
+        console.error('无效的时间格式:', dateTimeStr)
+        return ''
+      }
+
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const seconds = String(date.getSeconds()).padStart(2, '0')
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    }
+
+    const startTimeFormatted = formatToApiTime(startDate.value)
+    const endTimeFormatted = formatToApiTime(endDate.value)
+
+    console.log('原始时间值:', { start: startDate.value, end: endDate.value })
+    console.log('格式化后时间:', { start: startTimeFormatted, end: endTimeFormatted })
+
     const requestData = {
       accountId: props.accountId,
-      startTime: `${startDate.value} 00:00:00`,
-      endTime: `${endDate.value} 23:59:59`
+      startTime: startTimeFormatted,
+      endTime: endTimeFormatted
     }
 
     console.log('请求账户历史净值数据:', requestData)
@@ -146,8 +178,11 @@ const createChart = () => {
     },
   })
 
-  lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
-    color: '#1976d2',
+  // 添加面积系列（用于净值曲线，带阴影效果）
+  lineSeries = chart.addSeries(LightweightCharts.AreaSeries, {
+    lineColor: '#1976d2',
+    topColor: 'rgba(25, 118, 210, 0.4)',
+    bottomColor: 'rgba(25, 118, 210, 0.05)',
     lineWidth: 2,
     crosshairMarkerVisible: true,
     crosshairMarkerRadius: 6,
@@ -181,11 +216,38 @@ const refreshData = () => {
   }
 }
 
+// 启动自动刷新
+const startAutoRefresh = () => {
+  // 清除已存在的定时器
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer)
+  }
+
+  // 每60秒（1分钟）自动刷新一次
+  autoRefreshTimer = setInterval(() => {
+    console.log('自动刷新图表数据...')
+    if (lineSeries) {
+      loadData()
+    }
+  }, 60000) // 60000毫秒 = 1分钟
+}
+
+// 停止自动刷新
+const stopAutoRefresh = () => {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer)
+    autoRefreshTimer = null
+  }
+}
+
 onMounted(() => {
   userInfo.value = getUserInfo()
   initDateRange()
   createChart()
   loadData()
+
+  // 启动自动刷新
+  startAutoRefresh()
 
   const handleResize = () => {
     if (chart && chartContainer.value) {
@@ -199,6 +261,7 @@ onMounted(() => {
 
   onUnmounted(() => {
     window.removeEventListener('resize', handleResize)
+    stopAutoRefresh() // 停止自动刷新
     if (chart) {
       chart.remove()
     }
@@ -219,14 +282,14 @@ onMounted(() => {
     <div class="controls">
       <button @click="goBack" class="back-btn">← 返回列表</button>
 
-      <div class="control-group">
-        <label>开始日期:</label>
-        <input v-model="startDate" type="date" />
+      <div class="control-group" @click="$refs.startDateInput.showPicker()">
+        <label>开始时间:</label>
+        <input ref="startDateInput" v-model="startDate" type="datetime-local" />
       </div>
 
-      <div class="control-group">
-        <label>结束日期:</label>
-        <input v-model="endDate" type="date" />
+      <div class="control-group" @click="$refs.endDateInput.showPicker()">
+        <label>结束时间:</label>
+        <input ref="endDateInput" v-model="endDate" type="datetime-local" />
       </div>
 
       <button @click="refreshData" :disabled="loading" class="refresh-btn">
@@ -358,6 +421,14 @@ h1 {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.control-group:hover {
+  background-color: rgba(25, 118, 210, 0.05);
 }
 
 .control-group label {
@@ -365,16 +436,21 @@ h1 {
   font-size: 14px;
   white-space: nowrap;
   font-weight: 500;
+  cursor: pointer;
+  user-select: none;
 }
 
 .control-group input {
-  padding: 8px 12px;
+  padding: 10px 14px;
   border: 1px solid #d0d0d0;
   border-radius: 4px;
   background: #ffffff;
   color: #333333;
   font-size: 14px;
   transition: border-color 0.3s;
+  min-height: 40px;
+  cursor: pointer;
+  flex: 1;
 }
 
 .control-group input:focus {

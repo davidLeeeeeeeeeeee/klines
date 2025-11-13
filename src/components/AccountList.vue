@@ -107,42 +107,45 @@ onMounted(() => {
     </div>
 
     <div class="controls">
-      <button @click="goHome" class="back-btn">← 返回首页</button>
-      <button @click="createNewAccount" class="create-btn">➕ 新建子账户</button>
-      
-      <div class="filter-group">
-        <label>状态:</label>
-        <select v-model="initFilter" @change="() => { page = 1; fetchAccounts() }">
-          <option value="">全部</option>
-          <option value="0">未初始化</option>
-          <option value="1">已初始化</option>
-        </select>
+      <div class="controls-left">
+        <button @click="goHome" class="back-btn">← 返回首页</button>
+
+        <div class="filter-group">
+          <label>状态:</label>
+          <select v-model="initFilter" @change="() => { page = 1; fetchAccounts() }">
+            <option value="">全部</option>
+            <option value="0">未初始化</option>
+            <option value="1">已初始化</option>
+          </select>
+        </div>
+
+        <div class="sort-group">
+          <label>排序:</label>
+          <button
+            :class="{ active: sortType === 0 }"
+            @click="changeSortType(0)"
+            class="sort-btn"
+          >
+            时间倒序
+          </button>
+          <button
+            :class="{ active: sortType === 1 }"
+            @click="changeSortType(1)"
+            class="sort-btn"
+          >
+            净值倒序
+          </button>
+          <button
+            :class="{ active: sortType === 2 }"
+            @click="changeSortType(2)"
+            class="sort-btn"
+          >
+            净值升序
+          </button>
+        </div>
       </div>
 
-      <div class="sort-group">
-        <label>排序:</label>
-        <button 
-          :class="{ active: sortType === 0 }" 
-          @click="changeSortType(0)"
-          class="sort-btn"
-        >
-          时间倒序
-        </button>
-        <button 
-          :class="{ active: sortType === 1 }" 
-          @click="changeSortType(1)"
-          class="sort-btn"
-        >
-          净值倒序
-        </button>
-        <button 
-          :class="{ active: sortType === 2 }" 
-          @click="changeSortType(2)"
-          class="sort-btn"
-        >
-          净值升序
-        </button>
-      </div>
+      <button @click="createNewAccount" class="create-btn">➕ 新建子账户</button>
     </div>
 
     <div v-if="error" class="error-message">
@@ -161,27 +164,17 @@ onMounted(() => {
       <table>
         <thead>
           <tr>
-            <th>操作</th>
-            <th>账户ID</th>
-            <th>API Key</th>
+            <th>UID</th>
             <th>交易所</th>
             <th>净值</th>
             <th>状态</th>
             <th>创建时间</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="account in accounts" :key="account.id">
-            <td class="actions">
-              <button @click="viewAccountDetail(account.id)" class="action-btn view-btn">
-                查看
-              </button>
-              <button @click="deleteAccount(account.id)" class="action-btn delete-btn">
-                删除
-              </button>
-            </td>
             <td>{{ account.id }}</td>
-            <td class="api-key">{{ account.apiKey }}</td>
             <td>{{ account.exchange }}</td>
             <td class="equity">{{ account.equity }}</td>
             <td>
@@ -190,6 +183,14 @@ onMounted(() => {
               </span>
             </td>
             <td>{{ new Date(account.createTime).toLocaleDateString() }}</td>
+            <td class="actions">
+              <button @click="viewAccountDetail(account.id)" class="action-btn view-btn">
+                查看
+              </button>
+              <button @click="deleteAccount(account.id)" class="action-btn delete-btn">
+                删除
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -296,6 +297,7 @@ h1 {
 
 .controls {
   display: flex;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 25px;
   padding: 16px;
@@ -304,6 +306,14 @@ h1 {
   flex-wrap: wrap;
   align-items: center;
   border: 1px solid #e0e0e0;
+}
+
+.controls-left {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 1;
 }
 
 .back-btn,
