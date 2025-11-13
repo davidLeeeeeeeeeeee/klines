@@ -127,7 +127,6 @@ onMounted(() => {
       <h1>📋 子账户管理</h1>
       <div class="user-info" v-if="userInfo">
         <span class="username">👤 {{ userInfo.username }}</span>
-        <button @click="handleLogout" class="logout-btn">退出登录</button>
       </div>
     </div>
 
@@ -310,23 +309,6 @@ h1 {
   font-weight: 500;
 }
 
-.logout-btn {
-  padding: 8px 16px;
-  background: #d32f2f;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.3s;
-  font-weight: 500;
-}
-
-.logout-btn:hover {
-  background: #b71c1c;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
 .controls {
   display: flex;
   justify-content: space-between;
@@ -484,7 +466,7 @@ th.sortable:hover {
 
 .sort-icon .icon-default {
   width: 14px;
-  height: 14px; 
+  height: 14px;
   color: #cccccc;
   transition: all 0.2s;
 }
@@ -655,19 +637,11 @@ td {
 
   .user-info {
     width: 100%;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
     padding: 12px;
   }
 
   .username {
     width: 100%;
-  }
-
-  .logout-btn {
-    width: 100%;
-    padding: 10px;
   }
 
   .controls {
