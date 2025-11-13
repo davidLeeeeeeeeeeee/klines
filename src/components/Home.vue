@@ -20,9 +20,35 @@ const startDate = ref('')
 const endDate = ref('')
 const userInfo = ref(null)
 const dataGranularity = ref('未知') // 数据粒度（分钟/小时/日）
+const positionData = ref([]) // 持仓数据
+const closePnlList = ref([]) // 平仓历史列表
+const closePnlTotal = ref(0) // 平仓历史总数
+const closePnlPage = ref(1) // 平仓历史页码
+const closePnlPageSize = ref(10) // 平仓历史每页数量
+const selectedSymbol = ref('BTCUSDT') // 选中的交易对
+const selectedSide = ref('Buy') // 选中的方向
+const loadingPosition = ref(false) // 持仓加载状态
+const loadingClosePnl = ref(false) // 平仓历史加载状态
+const loadingClose = ref(false) // 平仓操作加载状态
 let chart = null
 let lineSeries = null
 let autoRefreshTimer = null // 自动刷新定时器
+
+// 交易对选项
+const symbolOptions = [
+  { value: 'BTCUSDT', label: 'BTC' },
+  { value: 'ETHUSDT', label: 'ETH' },
+  { value: 'SOLUSDT', label: 'SOL' },
+  { value: 'BNBUSDT', label: 'BNB' },
+  { value: 'HYPEUSDT', label: 'HYPE' },
+  { value: 'XRPUSDT', label: 'XRP' }
+]
+
+// 方向选项
+const sideOptions = [
+  { value: 'Buy', label: '多' },
+  { value: 'Sell', label: '空' }
+]
 
 // 初始化日期范围
 const initDateRange = () => {
@@ -41,6 +67,38 @@ const initDateRange = () => {
 
   startDate.value = formatDateTime(start)
   endDate.value = formatDateTime(end)
+}
+
+// 获取持仓信息
+const fetchPositionData = async () => {
+  if (!userInfo.value) return
+
+  loadingPosition.value = true
+
+  try {
+    const requestData = {
+      accountId: userInfo.value.id || 0,  // 使用 userInfo.id 作为 accountId
+      apiKey: '',
+      exchange: exchange.value,
+      userId: userInfo.value.id || 0  // userId 也使用 userInfo.id
+    }
+
+    console.log('请求持仓数据:', requestData)
+
+    const response = await post('/alphanow-admin/api/trade/position', requestData)
+    console.log('持仓数据响应:', response)
+
+    if (response && response.data) {
+      positionData.value = Array.isArray(response.data) ? response.data : []
+    } else {
+      positionData.value = []
+    }
+  } catch (err) {
+    console.error('获取持仓数据失败:', err)
+    positionData.value = []
+  } finally {
+    loadingPosition.value = false
+  }
 }
 
 // 获取用户历史净值数据
@@ -248,6 +306,103 @@ const stopAutoRefresh = () => {
   }
 }
 
+// 获取平仓历史列表
+const fetchClosePnlList = async () => {
+  if (!userInfo.value) return
+
+  loadingClosePnl.value = true
+
+  try {
+    const requestData = {
+      page: closePnlPage.value,
+      pageSize: closePnlPageSize.value,
+      param: {
+        accountId: userInfo.value.id || 0,  // 使用 userInfo.id 作为 accountId
+        exchange: exchange.value,
+        side: selectedSide.value === 'all' ? '' : selectedSide.value,
+        symbol: selectedSymbol.value === 'all' ? '' : selectedSymbol.value
+      }
+    }
+
+    console.log('请求平仓历史数据:', requestData)
+
+    const response = await post('/alphanow-admin/api/trade/close/list', requestData)
+    console.log('平仓历史响应:', response)
+
+    if (response && response.data) {
+      closePnlList.value = response.data.records || []
+      closePnlTotal.value = response.data.total || 0
+    } else {
+      closePnlList.value = []
+      closePnlTotal.value = 0
+    }
+  } catch (err) {
+    console.error('获取平仓历史失败:', err)
+    closePnlList.value = []
+    closePnlTotal.value = 0
+  } finally {
+    loadingClosePnl.value = false
+  }
+}
+
+// 一键平仓
+const handleClosePosition = async () => {
+  if (!selectedSymbol.value || !selectedSide.value) {
+    alert('请选择交易对和方向')
+    return
+  }
+
+  if (!confirm(`确定要平仓 ${selectedSymbol.value} ${selectedSide.value === 'Buy' ? '多' : '空'}头吗？`)) {
+    return
+  }
+
+  loadingClose.value = true
+
+  try {
+    const requestData = {
+      symbol: selectedSymbol.value,
+      closeSide: selectedSide.value
+    }
+
+    console.log('请求平仓:', requestData)
+
+    const response = await post('/alphanow-admin/api/trade/closePosition', requestData)
+    console.log('平仓响应:', response)
+
+    if (response && response.data) {
+      alert('平仓成功')
+      // 刷新持仓和平仓历史
+      await fetchPositionData()
+      await fetchClosePnlList()
+    } else {
+      alert('平仓失败')
+    }
+  } catch (err) {
+    console.error('平仓失败:', err)
+    alert('平仓失败: ' + err.message)
+  } finally {
+    loadingClose.value = false
+  }
+}
+
+// 切换页码
+const handlePageChange = (page) => {
+  closePnlPage.value = page
+  fetchClosePnlList()
+}
+
+// 格式化时间戳
+const formatTime = (timestamp) => {
+  if (!timestamp) return '-'
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
 onMounted(() => {
   // 获取用户信息
   userInfo.value = getUserInfo()
@@ -255,6 +410,10 @@ onMounted(() => {
   initDateRange()
   createChart()
   loadData()
+
+  // 加载持仓和平仓历史数据
+  fetchPositionData()
+  fetchClosePnlList()
 
   // 启动自动刷新
   startAutoRefresh()
@@ -286,9 +445,32 @@ onMounted(() => {
     <div class="header">
       <h1>{{ msg }}</h1>
       <div class="user-info" v-if="userInfo">
-        <span class="username">👤 {{ userInfo.username }}</span>
-        <span class="equity">💰 净值: {{ userInfo.equity }}</span>
-        <button @click="handleLogout" class="logout-btn">退出登录</button>
+        <div class="user-basic-info">
+          <span class="username">👤 {{ userInfo.username }}</span>
+          <span class="equity">💰 净值: {{ userInfo.equity }}</span>
+        </div>
+
+        <!-- 持仓信息 -->
+        <div class="position-info" v-if="positionData.length > 0">
+          <div class="position-title">📊 当前持仓</div>
+          <div class="position-list">
+            <div v-for="pos in positionData" :key="pos.symbol + pos.side" class="position-item">
+              <span class="pos-symbol">{{ pos.symbol }}</span>
+              <span :class="['pos-side', pos.side === 'Buy' ? 'long' : 'short']">
+                {{ pos.side === 'Buy' ? '多' : '空' }}
+              </span>
+              <span class="pos-qty">数量: {{ pos.qty }}</span>
+              <span class="pos-price">均价: {{ pos.avaPrice }}</span>
+              <span :class="['pos-pnl', pos.unrealisedPnl >= 0 ? 'profit' : 'loss']">
+                盈亏: {{ pos.unrealisedPnl >= 0 ? '+' : '' }}{{ pos.unrealisedPnl }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="position-info" v-else-if="!loadingPosition">
+          <div class="position-empty">暂无持仓</div>
+        </div>
+
       </div>
     </div>
 
@@ -329,6 +511,109 @@ onMounted(() => {
     </div>
 
     <div ref="chartContainer" class="chart-wrapper"></div>
+
+    <!-- 平仓操作区域 -->
+    <div class="close-position-section">
+      <div class="section-header">
+        <h2>⚡ 一键平仓</h2>
+      </div>
+
+      <div class="close-controls">
+        <div class="control-group">
+          <label>交易对:</label>
+          <select v-model="selectedSymbol" class="select-input">
+            <option v-for="opt in symbolOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>方向:</label>
+          <select v-model="selectedSide" class="select-input">
+            <option v-for="opt in sideOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
+
+        <button @click="handleClosePosition" :disabled="loadingClose" class="close-btn">
+          {{ loadingClose ? '平仓中...' : '立即平仓' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 平仓历史列表 -->
+    <div class="close-history-section">
+      <div class="section-header">
+        <h2>📜 平仓历史</h2>
+        <button @click="fetchClosePnlList" :disabled="loadingClosePnl" class="refresh-small-btn">
+          {{ loadingClosePnl ? '加载中...' : '刷新' }}
+        </button>
+      </div>
+
+      <div v-if="loadingClosePnl" class="loading-message">
+        加载中...
+      </div>
+
+      <div v-else-if="closePnlList.length === 0" class="empty-message">
+        暂无平仓记录
+      </div>
+
+      <div v-else class="close-history-table">
+        <table>
+          <thead>
+            <tr>
+              <th>交易对</th>
+              <th>方向</th>
+              <th>数量</th>
+              <th>入场价</th>
+              <th>平仓价</th>
+              <th>盈亏</th>
+              <th>杠杆</th>
+              <th>时间</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in closePnlList" :key="item.id">
+              <td>{{ item.symbol }}</td>
+              <td :class="item.side === 'Buy' ? 'long' : 'short'">
+                {{ item.side === 'Buy' ? '多' : '空' }}
+              </td>
+              <td>{{ item.closedQty }}</td>
+              <td>{{ item.avgEntryPrice }}</td>
+              <td>{{ item.avgExitPrice }}</td>
+              <td :class="item.closedPnl >= 0 ? 'profit' : 'loss'">
+                {{ item.closedPnl >= 0 ? '+' : '' }}{{ item.closedPnl }}
+              </td>
+              <td>{{ item.leverage }}x</td>
+              <td>{{ formatTime(item.orderCreateTime) }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- 分页 -->
+        <div class="pagination" v-if="closePnlTotal > closePnlPageSize">
+          <button
+            @click="handlePageChange(closePnlPage - 1)"
+            :disabled="closePnlPage <= 1"
+            class="page-btn"
+          >
+            上一页
+          </button>
+          <span class="page-info">
+            第 {{ closePnlPage }} 页 / 共 {{ Math.ceil(closePnlTotal / closePnlPageSize) }} 页
+          </span>
+          <button
+            @click="handlePageChange(closePnlPage + 1)"
+            :disabled="closePnlPage >= Math.ceil(closePnlTotal / closePnlPageSize)"
+            class="page-btn"
+          >
+            下一页
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- 底部退出登录按钮 (手机模式) -->
     <div class="bottom-logout">
@@ -386,12 +671,20 @@ h1 {
 
 .user-info {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 15px;
   background: #f5f5f5;
-  padding: 12px 20px;
+  padding: 16px 20px;
   border-radius: 6px;
   border: 1px solid #e0e0e0;
+  width: 100%;
+}
+
+.user-basic-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
 }
 
 .username,
@@ -399,6 +692,85 @@ h1 {
   color: #666666;
   font-size: 14px;
   font-weight: 500;
+}
+
+.position-info {
+  width: 100%;
+  background: #fff;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.position-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.position-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.position-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.pos-symbol {
+  font-weight: 600;
+  color: #333;
+}
+
+.pos-side {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.pos-side.long {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.pos-side.short {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.pos-qty,
+.pos-price {
+  color: #666;
+}
+
+.pos-pnl {
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.pos-pnl.profit {
+  color: #2e7d32;
+}
+
+.pos-pnl.loss {
+  color: #c62828;
+}
+
+.position-empty {
+  color: #999;
+  font-size: 13px;
+  text-align: center;
+  padding: 8px;
 }
 
 .logout-btn {
@@ -542,7 +914,183 @@ h1 {
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 1px solid #e0e0e0;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+}
+
+/* 平仓操作区域 */
+.close-position-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #fff3e0;
+  border-radius: 8px;
+  border: 2px solid #ff9800;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.close-controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.close-btn {
+  padding: 10px 24px;
+  background: #ff5722;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.close-btn:hover:not(:disabled) {
+  background: #e64a19;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.close-btn:disabled {
+  background: #bdbdbd;
+  cursor: not-allowed;
+}
+
+/* 平仓历史区域 */
+.close-history-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.refresh-small-btn {
+  padding: 6px 12px;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s;
+}
+
+.refresh-small-btn:hover:not(:disabled) {
+  background: #1565c0;
+}
+
+.refresh-small-btn:disabled {
+  background: #bdbdbd;
+  cursor: not-allowed;
+}
+
+.loading-message,
+.empty-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.close-history-table {
+  overflow-x: auto;
+}
+
+.close-history-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.close-history-table th,
+.close-history-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 13px;
+}
+
+.close-history-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+  color: #333;
+}
+
+.close-history-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+.close-history-table .long {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.close-history-table .short {
+  color: #c62828;
+  font-weight: 600;
+}
+
+.close-history-table .profit {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.close-history-table .loss {
+  color: #c62828;
+  font-weight: 600;
+}
+
+/* 分页 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 4px;
+}
+
+.page-btn {
+  padding: 8px 16px;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #1565c0;
+}
+
+.page-btn:disabled {
+  background: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.page-info {
+  color: #666;
+  font-size: 13px;
 }
 
 /* 底部退出登录按钮 (手机模式) */
@@ -626,10 +1174,14 @@ h1 {
 
   .user-info {
     width: 100%;
+    padding: 12px;
+  }
+
+  .user-basic-info {
+    width: 100%;
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
-    padding: 12px;
+    gap: 8px;
   }
 
   .username,
@@ -637,9 +1189,55 @@ h1 {
     width: 100%;
   }
 
+  .position-item {
+    font-size: 12px;
+    gap: 6px;
+  }
+
   .logout-btn {
     width: 100%;
     padding: 10px;
+  }
+
+  .close-position-section,
+  .close-history-section {
+    padding: 12px;
+  }
+
+  .section-header h2 {
+    font-size: 16px;
+  }
+
+  .close-controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .close-controls .control-group {
+    width: 100%;
+  }
+
+  .close-btn {
+    width: 100%;
+  }
+
+  .close-history-table {
+    font-size: 12px;
+  }
+
+  .close-history-table th,
+  .close-history-table td {
+    padding: 8px 4px;
+    font-size: 11px;
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .page-btn {
+    width: 100%;
   }
 
   .controls {
