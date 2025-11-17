@@ -393,6 +393,9 @@ onMounted(() => {
             </span>
             <span class="pos-qty">数量: {{ pos.qty }}</span>
             <span class="pos-price">均价: {{ pos.avaPrice }}</span>
+            <span class="pos-price">最新价: {{ pos.lastPrice || '-' }}</span>
+            <span class="pos-price">止损: {{ pos.stopLoss || '-' }}</span>
+            <span class="pos-price">止盈: {{ pos.takeProfit || '-' }}</span>
             <span :class="['pos-pnl', pos.unrealisedPnl >= 0 ? 'profit' : 'loss']">
               盈亏: {{ pos.unrealisedPnl >= 0 ? '+' : '' }}{{ pos.unrealisedPnl }}
             </span>

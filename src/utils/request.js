@@ -3,6 +3,16 @@ import { getToken, clearAuth } from './auth'
 
 const API_BASE_URL = 'https://alphanow.io'
 
+// 用于存储 router 实例的变量
+let routerInstance = null
+
+/**
+ * 设置 router 实例（在 main.js 中调用）
+ */
+export const setRouter = (router) => {
+  routerInstance = router
+}
+
 /**
  * 通用请求函数
  * @param {string} url - 请求路径
@@ -11,7 +21,7 @@ const API_BASE_URL = 'https://alphanow.io'
  */
 export const request = async (url, options = {}) => {
   const token = getToken()
-  
+
   // 默认配置
   const defaultOptions = {
     method: 'GET',
@@ -45,30 +55,57 @@ export const request = async (url, options = {}) => {
   try {
     const response = await fetch(`${API_BASE_URL}${url}`, finalOptions)
 
-    // 检查响应状态
-    if (!response.ok) {
-      if (response.status === 401) {
-        // 未授权，可能需要重新登录
-        throw new Error('未授权，请重新登录')
+    // 先尝试解析 JSON，无论状态码是什么
+    let data
+    try {
+      data = await response.json()
+    } catch (parseError) {
+      // 如果无法解析 JSON，检查 HTTP 状态码
+      if (!response.ok) {
+        if (response.status === 401) {
+          handleAuthError()
+          throw new Error('未授权，请重新登录')
+        }
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw parseError
     }
-
-    const data = await response.json()
 
     // 统一处理登录失效（code: 3004）
     if (data.code === 3004) {
       console.log('登录已失效，清理数据并跳转到登录页面')
-      clearAuth()
-      // 跳转到登录页面
-      window.location.href = '/login'
+      handleAuthError()
       throw new Error('登录已失效，请重新登录')
+    }
+
+    // 检查响应状态（在检查 code 之后）
+    if (!response.ok && data.code !== 3004) {
+      if (response.status === 401) {
+        handleAuthError()
+        throw new Error('未授权，请重新登录')
+      }
+      throw new Error(data.description || `HTTP error! status: ${response.status}`)
     }
 
     return data
   } catch (error) {
     console.error('请求失败:', error)
     throw error
+  }
+}
+
+/**
+ * 处理认证错误，清除认证信息并跳转到登录页
+ */
+const handleAuthError = () => {
+  clearAuth()
+
+  // 优先使用 router 实例进行跳转
+  if (routerInstance) {
+    routerInstance.push('/login')
+  } else {
+    // 如果没有 router 实例，使用 window.location
+    window.location.href = '/login'
   }
 }
 
